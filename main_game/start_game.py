@@ -3,10 +3,12 @@ import discord
 from discord.ext import commands
 import random
 from characters.characters_functions import get_characters_by_allegiance
+from main_game.game import Game
 
 async def start_game(nb, message, client):
     response = await message.reply("Démarrage de la partie... Cliquez sur la réaction pour rejoindre ! Vous avez 30s")
     await response.add_reaction('✅')
+
 
     players = []
     characters = []
@@ -56,5 +58,8 @@ async def start_game(nb, message, client):
             players[i][1] = characters[i]
             # send character in mp
             await players[i][0].send("Votre personnage est :\n\n" + players[i][1].get_card(), file=discord.File(players[i][1].image))
+            
+        game = Game(players)
+        return game
 
 
