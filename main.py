@@ -1,5 +1,6 @@
 import asyncio
 import discord
+import random
 import nest_asyncio
 from discord.ext import commands
 from main_game.start_game import start_game
@@ -73,6 +74,24 @@ async def draw(ctx):
   global client
   await game.draw_vision(ctx.message.author, ctx, client)
 
+# roll some dices
+@client.command(name="roll")
+async def roll(ctx, option = None):
+  d4 = random.randint(1, 4)
+  d6 = random.randint(1, 6)
+  if option == None:
+    await ctx.reply(str(d6) + "/6 + " + str(d4) + "/4 = " + str(d4+d6))
+    return
+  if option == "atk":
+    if d4>d6:
+      await ctx.reply(str(d4) + "/4 - " + str(d6) + "/6 = " + str(d4-d6))
+    else :
+      await ctx.reply(str(d6) + "/6 - " + str(d4) + "/4 = " + str(d6-d4))
+    return
+  if option == "d4":
+    await ctx.reply(str(d4) + "/4")
+  if option == "d6":
+    await ctx.reply(str(d6) + "/6")
 
 
 @client.event

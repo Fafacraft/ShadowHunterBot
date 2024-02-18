@@ -43,14 +43,14 @@ async def start_game(nb, message, client):
         return False
         
     try:
-        await client.wait_for('reaction_add', timeout=5, check=check)  # DEBUG ; timeout should be how long to wait for people to ready up, for exemple, 30s
+        await client.wait_for('reaction_add', timeout=30, check=check)  # DEBUG ; timeout should be how long to wait for people to ready up, for exemple, 30s
     except asyncio.TimeoutError:
         pass
 
     if len(players) > nb:
         await message.channel.send("Il y a trop de joueur ! Avez-vous mis le bon nombre ? (" + str(nb) + ")")
         return
-    if len(players) < 1:  # DEBUG ; put that to 1 instead of nb to be able to test the bot solo
+    if len(players) < nb:  # DEBUG ; put that to 1 instead of nb to be able to test the bot solo
         await message.channel.send("Il n'y a pas assez de joueur pour commencer la partie.")
     else:
         await message.channel.send("La partie commence ! Votre personnage vous sera envoyé en mp.")
