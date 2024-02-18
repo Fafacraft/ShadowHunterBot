@@ -38,7 +38,7 @@ class Game:
             player_list_message += emoji_list[i] + " : "
             player_list_message += self.players[i][0].name + "\n"
 
-        response = await self.players[user_local_id][0].send("Vous avez piochez :\n\n" + card_drawn.get_card() + "\n\nA qui voulez-vous la donner ?\n" + player_list_message, file=discord.File(card_drawn.image))
+        response = await self.players[user_local_id][0].send("Vous avez pioché :\n\n" + card_drawn.get_card() + "\n\nA qui voulez-vous la donner ?\n" + player_list_message, file=discord.File(card_drawn.image))
 
         # allow to send the card to another player
         for i in range(nb):
