@@ -12,7 +12,7 @@ async def start_game(nb, message, client):
     characters = []
     
     # choose the characters randomly with some good ol' shuffles
-    all_neutrals = get_characters_by_allegiance("Neutral")
+    all_neutrals = get_characters_by_allegiance("Neutre")
     all_shadow = get_characters_by_allegiance("Hunter")
     all_hunter = get_characters_by_allegiance("Shadow")
     random.shuffle(all_neutrals)
