@@ -81,4 +81,9 @@ class Game:
 
         # send the card to the other player
         await self.players[receiver_local_id][0].send("Vous avez reçu de la part de " + self.players[user_local_id][0].name + " :\n\n" + card_drawn.get_card(), file=discord.File(card_drawn.image))
+        
+        # send comfirmation in mp to the sender
+        await self.players[user_local_id][0].send("Carte envoyé à " + self.players[receiver_local_id][0].name)
+
+        # send message to the global channel
         await ctx.send(self.players[user_local_id][0].name + " a donner une carte vision à " + self.players[receiver_local_id][0].name)

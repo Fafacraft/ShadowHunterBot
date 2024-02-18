@@ -2,10 +2,10 @@ from characters.character import Character
 
 characters = []
 
-george = Character("George", "Hunter", 14, "./static/images/characters/George.webp", "Tous les shadows sont morts", "(Une fois dans la partie) \nChoisissez un joueur et lancer un dé à 4 faces. Faîtes-lui autant de dégâts que le résultat de ce dé.")
+george = Character("George", "Hunter", 14, "./static/images/characters/George.webp", "Tous les shadows sont morts", "(Une fois dans la partie) \nAu début de votre tour, choisissez un joueur et lancer un dé à 4 faces. Faîtes-lui autant de dégâts que le résultat de ce dé.")
 characters.append(george)
 
-franklin = Character("Franklin", "Hunter", 12, "./static/images/characters/Franklin.webp", "Tous les shadows sont morts", "(Une fois dans la partie) \nChoisissez un joueur et lancer un dé à 6 faces. Faîtes-lui autant de dégâts que le résultat de ce dé.")
+franklin = Character("Franklin", "Hunter", 12, "./static/images/characters/Franklin.webp", "Tous les shadows sont morts", "(Une fois dans la partie) \nAu début de votre tour, choisissez un joueur et lancer un dé à 6 faces. Faîtes-lui autant de dégâts que le résultat de ce dé.")
 characters.append(franklin)
 
 emi = Character("Emi", "Hunter", 10, "./static/images/characters/Emi.webp", "Tous les shadows sont morts", "Quand vous vous déplacez, vous pouvez utilisé le dé normalement ou bouger dans le lieu adjacent de votre zone.")
