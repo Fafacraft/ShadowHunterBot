@@ -39,7 +39,7 @@ async def start_game(nb, message, client):
     # get the players who plays
     def check(reaction, user):
         if user not in players and not user.bot:
-            players.append([user, None])  # each player is a couple of the player + their character
+            players.append([user, None, None])  # each player is a couple of the player + their character + their current vote
         return False
         
     try:
@@ -50,7 +50,7 @@ async def start_game(nb, message, client):
     if len(players) > nb:
         await message.channel.send("Il y a trop de joueur ! Avez-vous mis le bon nombre ? (" + str(nb) + ")")
         return
-    if len(players) < nb:  # DEBUG ; put that to 1 instead of nb to be able to test the bot solo
+    if len(players) < 1:  # DEBUG ; put that to 1 instead of nb to be able to test the bot solo
         await message.channel.send("Il n'y a pas assez de joueur pour commencer la partie.")
     else:
         await message.channel.send("La partie commence ! Votre personnage vous sera envoyé en mp.")

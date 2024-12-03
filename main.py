@@ -4,6 +4,7 @@ import random
 import nest_asyncio
 from discord.ext import commands
 from main_game.start_game import start_game
+from lgel.lgel import start_lgel
 from main_game.game import Game
 
 nest_asyncio.apply()
@@ -65,6 +66,31 @@ async def cmd_start_game(ctx):
         pass
   except asyncio.TimeoutError:
     await ctx.send("Aucune réponse ; annuler.")
+
+#start a lgel game
+@client.command(name="start_lgel")
+async def cmd_start_game(ctx):
+  global game
+  global client
+  players = []
+
+  response = await ctx.message.reply("Démarrage de la partie... Cliquez sur la réaction ✅ pour rejoindre ! Vous avez 30s")
+  await response.add_reaction('✅')
+  
+  # get the players who plays
+  def check(reaction, user):
+      if user not in players and not user.bot:
+          players.append([user, None])  # each player is a couple of the player + their character
+      return False
+      
+  try:
+      await client.wait_for('reaction_add', timeout=5, check=check)  # DEBUG ; timeout should be how long to wait for people to ready up, for exemple, 30s
+  except asyncio.TimeoutError:
+      pass
+  
+  await start_lgel(players, response, client)
+
+
 
 
 # draw a card, for now only vision
