@@ -6,6 +6,7 @@ from discord.ext import commands
 from main_game.start_game import start_game
 from lgel.lgel import start_lgel
 from main_game.game import Game
+from lgel.player import Player
 
 nest_asyncio.apply()
 
@@ -80,7 +81,7 @@ async def cmd_start_game(ctx):
   # get the players who plays
   def check(reaction, user):
       if user not in players and not user.bot:
-          players.append([user, None])  # each player is a couple of the player + their character
+          players.append(Player(user))  # each player is a couple of the player + their character
       return False
       
   try:

@@ -2,6 +2,7 @@ import asyncio
 import discord
 import lgel.characters_functions as cf
 import random
+from lgel.player import Player
 
 async def start_lgel(players, message, client):
     nb_players = len(players)
@@ -31,10 +32,17 @@ async def start_lgel(players, message, client):
     message = await message.reply(list_characters)
 
 
-    couple = await first_night(message, players, client)
+    couple = await cupidon_couple(message, players, client)
+    # voleur if there is such thing, etc, all preplay
     await run_game(message, players, couple, client)
 
+# let's run the game
+async def run_game(message, players, couple, client):
+    # TODO first, process the first night
 
+    message = await message.reply("Le village se réveille.")
+
+# players of type Player[]
 async def chose_and_give_characters(players):
     nb_players = len(players)+5
     nb_wolf = int(nb_players/3) # third of the players or villagers, rounded down. 6 = 2 wolves. 8 = 2 wolves. 9 = 3 wolves. 12 = 4 wolves.
@@ -72,28 +80,27 @@ async def chose_and_give_characters(players):
     
     wolf_players_list = []
     for i in range(len(players)):
-        players[i][1] = all_characters[i]
+        players[i].character = all_characters[i]
         # send character in mp
-        await players[i][0].send("Votre personnage est :\n\n" + players[i][1].get_card(), file=discord.File(players[i][1].image))
-        if players[i][1].wolf:
+        await players[i].user.send("Votre personnage est :\n\n" + players[i].character.get_card(), file=discord.File(players[i].character.image))
+        if players[i].character.wolf:
             wolf_players_list.append(players[i])
 
     for player in wolf_players_list:
-        await player[0].send("Voici la liste des loups :\n" + get_player_list(wolf_players_list))
+        await player.user.send("Voici la liste des loups :\n" + get_player_list(wolf_players_list))
             
-
 
     random.shuffle(all_characters)
     return all_characters, wolf_players_list
 
-async def first_night(message, players, client):
+async def cupidon_couple(message, players, client):
     # cupidon
     couple=[]
     for player in players:
-        if player[1].name == "Cupidon": 
+        if player.character.name == "Cupidon": 
             await message.reply("Cupidon tire ses flèches...")
 
-            await player[0].send("Choisissez le premier amoureux :\n" + get_player_list(players))
+            await player.user.send("Choisissez le premier amoureux :\n" + get_player_list(players))
 
             couple1 = None
             attempts = 0
@@ -104,42 +111,39 @@ async def first_night(message, players, client):
                     couple.append(couple1)
                     attempts = 4
                 else:
-                    await player[0].send("Joueur non reconnue, reessayez.")
+                    await player.user.send("Joueur non reconnue, reessayez.")
                 attempts += 1
                 if attempts == 3:
-                    await player[0].send("Trop d'erreur, pas de couple !")
+                    await player.user.send("Trop d'erreur, pas de couple !")
 
                     
 
             if couple1 is not None:
                 attempts = 0
                 couple2 = None
-                await player[0].send("Avec qui voulez-vous mettre en couple " + couple[0].name + " ?\n")
+                await player.user.send("Avec qui voulez-vous mettre en couple " + couple[0].name + " ?\n")
                 while attempts < 3:
                     couple2 = await get_player_named_by_player(player, players, client)
                     if couple1 is not None:
                         couple.append(couple2)
                         attempts = 4
                     else:
-                        await player[0].send("Joueur non reconnue, reessayez.")
+                        await player.user.send("Joueur non reconnue, reessayez.")
                     attempts += 1
                     if attempts == 3:
-                        await player[0].send("Trop d'erreur, pas de couple !")
+                        await player.user.send("Trop d'erreur, pas de couple !")
             
             if couple1 is not None and couple2 is not None:
                 await couple[0].send("Cupidon vous à mis en couple avec " + couple[1].name + " ! Votre destin est maintenant scellé avec elle ou lui, pour le bien... ou le pire !")
                 await couple[1].send("Cupidon vous à mis en couple avec " + couple[0].name + " ! Votre destin est maintenant scellé avec elle ou lui, pour le bien... ou le pire !")
                 #to our cupidon
-                await player[0].send(couple[0].name + " et " + couple[1].name + " sont a présents amoureux et leur sort est scellé, pour le bien... ou le pire !")
-        # cupidon end
+                await player.user.send(couple[0].name + " et " + couple[1].name + " sont a présents amoureux et leur sort est scellé, pour le bien... ou le pire !")
 
     return couple
             
 
-async def run_game(message, players, couple, client):
-    message = await message.reply("Le village se réveille")
 
-
+# what does this do again
 async def get_player_named_by_player(player, players, client):
         def check(m):
             return m.author == player[0]
@@ -153,19 +157,19 @@ async def get_player_named_by_player(player, players, client):
         else:
             return None
 
-
+# get the player, or playername in python lists
 def get_player_list(players):
     player_list = ""
     for player in players:
-        player_list += "- " + player[0].name + "\n"
+        player_list += "- " + player.user.name + "\n"
     return player_list
 def get_playername_array(players):
     player_list = []
     for player in players:
-        player_list.append(player[0].name)
+        player_list.append(player.user.name)
     return player_list
 def get_player_by_name(name, players):
     for player in players:
-        if player[0].name == name:
-            return player[0]
+        if player.user.name == name:
+            return player.user
     return None
