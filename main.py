@@ -92,8 +92,6 @@ async def cmd_start_game(ctx):
   await start_lgel(players, response, client)
 
 
-
-
 # draw a card, for now only vision
 @client.command(name="draw")
 async def draw(ctx):

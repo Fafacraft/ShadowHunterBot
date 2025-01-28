@@ -49,8 +49,68 @@ async def run_game(message, players, couple, client):
         message = await message.reply("La nuit tombe.")
         message = await activate_vovo(message, players, client)
         message, wolves_target = await activate_wolves(message, players, client)
-        message, soso_kill = await activate_soso(message, players, client, wolves_target)
+        message, soso_kill, wolves_kill = await activate_soso(message, players, client, wolves_target)
         message = await message.reply("Le village se réveille.")
+        if wolves_kill != None:
+            game_on = not await kill_player(message, client, players, couple, wolves_kill)
+        if soso_kill != None:
+            game_on = not await kill_player(message, client, players, couple, soso_kill)
+        message = await message.reply("Il est temps pour les villageois de voter ! Qui sera pendu ce soir ?\nVous avez 3min.\n*vote [name]*\n" + get_player_list(get_all_alive(players)))
+        
+        # we check on all players alive
+        def check(m):
+                return any(m.author == player.user for player in get_all_alive(players))
+        start_time = asyncio.get_event_loop().time()
+        ten_mark = False
+        thirty_mark = False
+        sixty_mark = False
+        # voting phase
+        while asyncio.get_event_loop().time() - start_time < 180:
+            # some timer help, to alert of time end
+            if asyncio.get_event_loop().time() - start_time > 120:
+                if asyncio.get_event_loop().time() - start_time > 150:
+                    if asyncio.get_event_loop().time() - start_time > 170:
+                        if not ten_mark:
+                            message = await message.reply("10s restant !")
+                            ten_mark = True
+                    else:
+                        if not thirty_mark:
+                            message = await message.reply("30s restant !")
+                            thirty_mark = True
+                else :
+                    if not sixty_mark:
+                        message = await message.reply("60s restant !")
+                        sixty_mark = True
+            try:
+                msg = await client.wait_for('message', timeout=1.0, check=check) # short timeout as we're in a loop and need to check time passing
+                # check if it is a vote
+                if msg.content.startswith("vote "):
+                    targetString = msg.content[len("vote "):].strip()
+                    targetPlayer = get_player_by_name(targetString, players)
+                    if targetPlayer == None:
+                        await msg.reply("Pseudo non reconnu, réessayez")
+                        continue
+                    # find the player who send the vote to add it
+                    for player in players:
+                        if player.user == msg.author:
+                            player.Vote = targetPlayer
+                    await msg.reply(msg.author.mention + " a voté contre " + targetPlayer.user.mention + " !")
+            except asyncio.TimeoutError:
+                pass
+        # vote calcul
+        votes = []
+        for player in players:
+            if player.Vote != None:
+                votes.append(player.Vote)
+                player.Vote = None
+        counters = Counter(votes)
+        winners = [player for player, count in counters.items() if count == max(counters.values())]
+        if len(winners) != 1:
+            await message.reply("Egalité ! Pas de mort aujourd'hui.")
+        else:
+            # we have a winner !... rip him
+            await message.reply("Vous décidez de pendre " + winners[0].user.mention)
+            game_on = not (await kill_player(message, client, players, couple, winners[0]))
 
 
 # players of type Player[]
@@ -119,6 +179,7 @@ async def cupidon_couple(message, players, client):
             while attempts < 3:
                 couple1 = await get_player_named_by_player(player, players, client)
                 if couple1 is not None:
+                    couple1.isCouple = True
                     couple.append(couple1)
                     attempts = 4
                 else:
@@ -136,6 +197,7 @@ async def cupidon_couple(message, players, client):
                 while attempts < 3:
                     couple2 = await get_player_named_by_player(player, players, client)
                     if couple1 is not None:
+                        couple2.isCouple = True
                         couple.append(couple2)
                         attempts = 4
                     else:
@@ -186,7 +248,7 @@ async def activate_wolves(message, players, client):
             await player.user.send("Vous avez 30s pour discuter avec les autres loups et dévorer quelqu'un !\n(tapez 'manger [pseudo]' pour manger !)\n" + get_player_list(get_all_alive(players)))
             wolves.append(player)
 
-    # we get all wolves chat in a DM channel
+    # we get all wolves chat 
     def check(m):
             return any(m.author == wolf.user for wolf in wolves)
     try:
@@ -242,15 +304,17 @@ async def activate_wolves(message, players, client):
 
 # handle soso turn
 async def activate_soso(message, players, client, wolves_target):
+    global SOSO_used_death
+    global SOSO_used_life
     for player in players:
         # found a soso
         if player.character.name == "La Sorcière" and player.alive == True:
             # check if all potions used first.
             if (SOSO_used_death and SOSO_used_life):
-                message = message.reply("La sorcière a utilisé toutes ses potions.")
-                return message
+                message = await message.reply("La sorcière a utilisé toutes ses potions.")
+                return message, None, wolves_target
 
-            message = message.reply("La sorcière décide si elle veut utilisé ses potions...")
+            message = await message.reply("La sorcière décide si elle veut utilisé ses potions...")
             # check target of wolves
             gonna_die_msg = "Les loups ne tuent personne ce soir."
             if wolves_target != None:
@@ -259,42 +323,34 @@ async def activate_soso(message, players, client, wolves_target):
             # MP
             mp = await player.user.send("Vous pouvez utiliser vos potions ! :\n*Cliquez sur une des réactions*" + get_player_list(get_all_alive(players))
                                         + "\n" + gonna_die_msg)
-            await mp.add_reaction("❌")
-            if not SOSO_used_life:
-                await mp.add_reaction("🩹")
-            if not SOSO_used_death:
-                await mp.add_reaction("🔪")
+            await mp.add_reaction('❌')
+            if not (SOSO_used_life) or wolves_target != None:
+                await mp.add_reaction('🩹')
+            if not (SOSO_used_death):
+                await mp.add_reaction('🔪')
             if not (SOSO_used_death or SOSO_used_life):
-                await mp.add_reaction("'2️⃣")
+                await mp.add_reaction('2️⃣')
 
             def check(reaction, user):
                 emoji_list = ['🩹', '🔪', '❌', '2️⃣']
-                return player.user == client.message.author and str(reaction.emoji) in emoji_list
+                return player.user == user and str(reaction.emoji) in emoji_list
             
             try:
-                reaction = await client.wait_for('reaction_add', timeout=30.0, check=check)
+                reaction, _ = await client.wait_for('reaction_add', timeout=30.0, check=check)
                 match reaction.emoji:
                     case '❌':
                         await player.user.send("Vous n'utilisez aucune potion cette nuit.")
                         return
                     case '🩹':
-                        if SOSO_used_life:
+                        if SOSO_used_life or wolves_target == None:
                             await player.user.send('*Nice try, cheater :p*')
-                            break
 
                         await player.user.send("Vous sauvez " + wolves_target.user.name)
+                        wolves_target = None
                         SOSO_used_life = True
-                        break
-                    case '2️⃣':
-                        if not (SOSO_used_death or SOSO_used_life):
-                            await player.user.send('*Nice try, cheater :p*')
-                            break
-                        # do both, so no break
-                        await player.user.send("Vous sauvez " + wolves_target.user.name)
                     case '🔪':
                         if SOSO_used_death:
                             await player.user.send('*Nice try, cheater :p*')
-                            break
 
                         await player.user.send("Qui souhaitez vous tuer ?\n" + get_player_list(get_all_alive(players)))
                         attempts = 0
@@ -304,7 +360,28 @@ async def activate_soso(message, players, client, wolves_target):
                             if target is not None:
                                 # get the player, send the message and end the activation, by returning current main channel message
                                 await player.user.send("Vous tuez froidement " + target.user.name + " cette nuit.")
-                                return message, target
+                                return message, target, wolves_target
+                            else:
+                                await player.user.send("Joueur non reconnue, réessayez.")
+                            attempts += 1
+                            if attempts == 3:
+                                await player.user.send("Trop d'erreur, tampis !")
+                        
+                    case '2️⃣':
+                        if not (SOSO_used_death or SOSO_used_life):
+                            await player.user.send('*Nice try, cheater :p*')
+                        # do both, so no break
+                        await player.user.send("Vous sauvez " + wolves_target.user.name)
+                        wolves_target = None
+                        await player.user.send("Qui souhaitez vous tuer ?\n" + get_player_list(get_all_alive(players)))
+                        attempts = 0
+                        # Get target by asking soso
+                        while attempts < 3:
+                            target = await get_player_named_by_player(player, players, client)
+                            if target is not None:
+                                # get the player, send the message and end the activation, by returning current main channel message
+                                await player.user.send("Vous tuez froidement " + target.user.name + " cette nuit.")
+                                return message, target, wolves_target
                             else:
                                 await player.user.send("Joueur non reconnue, réessayez.")
                             attempts += 1
@@ -313,7 +390,116 @@ async def activate_soso(message, players, client, wolves_target):
                 
             except asyncio.TimeoutError:
                 await player.user.send("Aucune réponse ; pas de potion cette nuit !")
-    return message, None
+    return message, None, wolves_target
+
+# handle the kill of a player, return if end_game
+async def kill_player(message, client, players, couple, player_to_kill):
+    message = await message.reply(player_to_kill.user.name + " est mort !")
+    player_to_kill.alive = False
+
+    # check if couple
+    if player_to_kill.isCouple:
+        other_couple = couple[0]
+        if couple[0] == player_to_kill:
+            other_couple = couple[1]
+        if other_couple.alive:
+            message.reply(player_to_kill.user.name + " était en couple avec " + other_couple.user.name + ", qui le/la suis dans la tombe !")
+            await kill_player(message, client, players, couple, other_couple)
+
+    # check if it is chassou
+    if player_to_kill.character.name == "Le Chasseur":
+        message = await message.reply("C'était le chasseur ! Avant de faire son dernier souffle, il peut décider de tirer sur quelqu'un...")
+        await player_to_kill.user.send("Vous êtes mort ! Mais pas tout seul, décidez qui tuer :\n" + get_player_list(get_all_alive(players)))
+        attempts = 0
+        # Get target by asking chassou
+        while attempts < 3:
+            target = await get_player_named_by_player(player_to_kill, players, client)
+            if target is not None:
+                # BAM, he ded
+                await message.reply(player_to_kill.user.name + " abat " + target.user.name + " dans un dernier souffle.")
+                await kill_player(message, client, players, couple, target)
+                # stop here the attempts
+                attempts = 4
+            else:
+                await player_to_kill.user.send("Joueur non reconnu, réessayez.")
+            attempts += 1
+            if attempts == 3:
+                await player_to_kill.user.send("Trop d'erreur, tampis !")
+
+    else:
+        message = await message.reply(player_to_kill.user.name + " était en faite " + player_to_kill.character.name)
+    return await check_victory(message, players)
+
+# check if end game is now, return if end_game
+async def check_victory(message, players):
+    alive_players = get_all_alive(players)
+    # separate all player by victory condition
+    alive_wolves = []
+    alive_villagers = []
+    alive_couple = []
+    for player in alive_players:
+        if player.isCouple:
+            alive_couple.append(player)
+
+        if player.character.wolf:
+            alive_wolves.append(player)
+        else:
+            alive_villagers.append(player)
+    
+    # first, check the couple ; if there is three player left and they are alive, they win
+    if len(alive_couple) != 0 and (len(alive_players) <= 3):
+        message = await end_game(message, players, "couple")
+        return True
+    # then, check the villagers ; if there is no wolves left, and there is at least one villager still alive, they win
+    if len(alive_wolves) == 0 and len(alive_villagers) > 0:
+        message = await end_game(message, players, "villagers")
+        return True
+    # finally, check wolves. If they are more numerous than villagers, they win
+    if len(alive_wolves) > len(alive_villagers):
+        message = await end_game(message, players, "wolves")
+        return True
+    # if everyone is dead, it is a draw
+    if len(alive_players) == 0:
+        message = await end_game(message, players, "draw")
+        return True
+    # else, not the end
+    return False
+
+# end the game, depending how in condition
+async def end_game(message, players, condition):
+    winners = []
+    losers = []
+    if condition == "villagers":
+        await message.reply("Tous les loups sont morts, les villageois ont gagné !")
+        winners = [player for player in players if not player.wolf]
+        losers = [player for player in players if player.wolf]
+    
+    elif condition == "wolves":
+        await message.reply("Tous les villageois sont morts, les loups ont gagné !")
+        winners = [player for player in players if player.wolf]
+        losers = [player for player in players if not player.wolf]
+    
+    elif condition == "couple":
+        await message.reply("Le couple a gagné seul !")
+        winners = [player for player in players if player.isCouple]
+        losers = [player for player in players if not player.isCouple]
+    
+    elif condition == "draw":
+        await message.reply("Tout le monde est mort, pas de gagnant !")
+        losers = players
+    
+    end_msg = "GAGNANTS\n"
+    for winner in winners:
+        end_msg += winner.user.mention + " qui était " + winner.character.name + "\n"
+    end_msg += "PERDANTS\n"
+    for loser in losers:
+        end_msg += loser.user.mention + " qui était " + loser.character.name + "\n"
+    await message.reply(end_msg)
+
+
+
+    
+    
 
 
 # this gets the name a player told (when he needs to choose from a list)

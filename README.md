@@ -4,6 +4,7 @@ A discord bot to help playing Shadow Hunter on discord with friends.
 
 # LGEL
 Also has lgel integreted, run $help in discord for more info
+It works, but the code needs a lot of clean up.
 
 
 
