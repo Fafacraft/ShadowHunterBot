@@ -22,7 +22,7 @@ class lgelGame:
 
     async def start_lgel(self):
         nb_players = len(self.players)
-        if (nb_players < 0): # DEBUG = at 3. At 0 to be able to play solo.
+        if (nb_players < 3): # DEBUG = at 3. At 0 to be able to play solo.
             await self.currentMessage.reply("Nombre insuffisant de joueur.")
             return
         if (nb_players > 18):
@@ -32,7 +32,7 @@ class lgelGame:
 
         self.currentMessage = await self.currentMessage.reply("Bienvenue dans la partie. Joueurs ;\n" + lt.get_player_list(self.players))
 
-        all_characters, wolf_players_list = await lt.chose_and_give_characters(self.players)
+        all_characters = await lt.chose_and_give_characters(self.players)
         nb_sv = 0
         nb_wolf = 0
         i = 0
@@ -431,7 +431,7 @@ class lgelGame:
         winners = []
         losers = []
         if condition == "villagers":
-            await self.message.reply("Tous les loups sont morts, les villageois ont gagné !")
+            await self.currentMessage.reply("Tous les loups sont morts, les villageois ont gagné !")
             winners = [player for player in self.players if not player.isWolf]
             losers = [player for player in self.players if player.isWolf]
         

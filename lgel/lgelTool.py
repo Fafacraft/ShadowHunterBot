@@ -6,7 +6,7 @@ import random
 
 # players of type Player[]
 async def chose_and_give_characters(players):
-    nb_players = len(players)+5
+    nb_players = len(players)
     nb_wolf = int(nb_players/3) # third of the players or villagers, rounded down. 6 = 2 wolves. 8 = 2 wolves. 9 = 3 wolves. 12 = 4 wolves.
     nb_villagers = nb_players-nb_wolf
     all_characters = []
@@ -32,7 +32,6 @@ async def chose_and_give_characters(players):
         temp_char = cf.get_all_priority_characters(priority, possible_villagers)
         random.shuffle(temp_char)
         while len(villagers) < nb_villagers and len(temp_char) > 0:
-            print(temp_char[0].name)
             villagers.append(temp_char[0])
             all_characters.append(temp_char[0])
             temp_char.pop(0)
@@ -54,7 +53,7 @@ async def chose_and_give_characters(players):
             
 
     random.shuffle(all_characters)
-    return all_characters, wolf_players_list
+    return all_characters
     
 
 

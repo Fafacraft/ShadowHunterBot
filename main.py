@@ -85,7 +85,7 @@ async def cmd_start_game(ctx):
       return False
       
   try:
-      await client.wait_for('reaction_add', timeout=5, check=check)  # DEBUG ; timeout should be how long to wait for people to ready up, for exemple, 30s
+      await client.wait_for('reaction_add', timeout=30, check=check)  # DEBUG ; timeout should be how long to wait for people to ready up, for exemple, 30s
   except asyncio.TimeoutError:
       pass
   
