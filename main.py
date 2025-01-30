@@ -4,7 +4,7 @@ import random
 import nest_asyncio
 from discord.ext import commands
 from main_game.start_game import start_game
-from lgel.lgel import start_lgel
+from lgel.lgelGame import lgelGame
 from main_game.game import Game
 from lgel.player import Player
 
@@ -89,7 +89,8 @@ async def cmd_start_game(ctx):
   except asyncio.TimeoutError:
       pass
   
-  await start_lgel(players, response, client)
+  game = lgelGame(players, response, client)
+  await game.start_lgel()
 
 
 # draw a card, for now only vision
